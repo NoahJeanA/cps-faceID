@@ -1,0 +1,52 @@
+*.yaml
+*.yml
+config.py
+
+# Log Dateien
+*.log
+**/*.log
+
+# JSON Daten
+live_status.json
+recognition_results.json
+camera_statistics.json
+
+# Python Cache
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+*.so
+
+# Virtual Environment
+venv/
+env/
+ENV/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Kamera Bilder (zu groß für Git)
+camera_images/
+**/camera_images/
+*.jpg
+*.jpeg
+*.png
+
+# Backup Dateien
+*~
+*.bak
+*.backup
+
+# Temporäre Dateien
+tmp/
+temp/
+.tmp/
+
+# OS spezifisch
+.DS_Store
+Thumbs.db
