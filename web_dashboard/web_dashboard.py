@@ -11,18 +11,16 @@ app = Flask(__name__)
 def get_latest_status():
     """Hole den aktuellen Live-Status"""
     try:
-        # Lese Live-Status (wird bei JEDEM Durchlauf geschrieben)
         if os.path.exists('live_status.json'):
             with open('live_status.json', 'r') as f:
                 status = json.load(f)
             
-            # Prüfe wie alt der Status ist
             timestamp = datetime.fromisoformat(status['timestamp'])
             age_minutes = (datetime.now() - timestamp).total_seconds() / 60
             
-            if age_minutes < 5:  # Nur wenn weniger als 5 Minuten alt
+            if age_minutes < 5:  
                 return {
-                    'status': status['status'],  # 'green', 'red', 'gray', 'processing'
+                    'status': status['status'],  
                     'message': status['message'],
                     'time': timestamp.strftime('%H:%M:%S'),
                     'camera': status.get('camera_id', 'ESP32'),
@@ -31,7 +29,6 @@ def get_latest_status():
                     'recognized': status.get('recognized', [])
                 }
         
-        # Fallback: Kein Live-Status oder zu alt
         return {
             'status': 'gray',
             'message': "💤 System nicht aktiv",
@@ -315,7 +312,6 @@ def debug_info():
     """Debug-Seite für Entwicklung"""
     debug_data = {}
     
-    # Live Status
     try:
         if os.path.exists('live_status.json'):
             with open('live_status.json', 'r') as f:
@@ -325,7 +321,6 @@ def debug_info():
     except Exception as e:
         debug_data['live_status'] = f"Fehler: {e}"
     
-    # Historie
     try:
         if os.path.exists('recognition_results.json'):
             with open('recognition_results.json', 'r') as f:
@@ -337,7 +332,6 @@ def debug_info():
     except Exception as e:
         debug_data['history'] = f"Fehler: {e}"
     
-    # Dateisystem Info
     debug_data['current_time'] = datetime.now().isoformat()
     debug_data['files_exist'] = {
         'live_status.json': os.path.exists('live_status.json'),
