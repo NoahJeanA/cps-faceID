@@ -20,7 +20,6 @@ class MultiCameraDownloader:
         self.running = False
         self.download_threads = []
         
-        # Ordner für alle Kameras erstellen
         self._create_directories()
     
     def _load_config(self):
@@ -55,7 +54,6 @@ class MultiCameraDownloader:
         if len(config['cameras']) == 0:
             raise ValueError("Mindestens eine Kamera muss konfiguriert sein")
         
-        # Validiere jede Kamera
         for i, camera in enumerate(config['cameras']):
             if 'name' not in camera:
                 raise ValueError(f"Kamera {i+1}: 'name' fehlt")
@@ -171,7 +169,6 @@ class MultiCameraDownloader:
     def _download_image_for_camera(self, camera):
         """Lädt ein Bild für eine spezifische Kamera herunter"""
         try:
-            # Konfiguration für diese Kamera
             url = self._get_camera_url(camera)
             folder_path = self._get_camera_folder(camera)
             max_images = camera.get('max_images', 
@@ -179,14 +176,11 @@ class MultiCameraDownloader:
             timeout = camera.get('timeout', 
                                self.config.get('global_settings', {}).get('timeout', 10))
             
-            # Alte Bilder aufräumen
             self._cleanup_old_images(folder_path, max_images)
             
-            # Bild herunterladen
             response = requests.get(url, timeout=timeout)
             response.raise_for_status()
             
-            # Dateiname generieren und speichern
             filename = self._generate_filename(camera['name'])
             filepath = os.path.join(folder_path, filename)
             
@@ -237,7 +231,6 @@ class MultiCameraDownloader:
         self.running = True
         self.download_threads = []
         
-        # Thread für jede Kamera starten
         for camera in enabled_cameras:
             thread = threading.Thread(
                 target=self._camera_download_loop, 
@@ -257,7 +250,6 @@ class MultiCameraDownloader:
         print("Stoppe alle Downloads...")
         self.running = False
         
-        # Warte auf alle Threads
         for thread in self.download_threads:
             thread.join(timeout=5)
         
@@ -274,7 +266,6 @@ class MultiCameraDownloader:
         
         print(f"Lade Einzelbilder von {len(enabled_cameras)} Kamera(s)...")
         
-        # Parallel download für bessere Performance
         with concurrent.futures.ThreadPoolExecutor(max_workers=len(enabled_cameras)) as executor:
             futures = [executor.submit(self._download_image_for_camera, camera) 
                       for camera in enabled_cameras]
@@ -334,21 +325,16 @@ class MultiCameraDownloader:
         print("Konfiguration erfolgreich neu geladen!")
 
 
-# Beispiel für die Verwendung
 if __name__ == "__main__":
-    # Multi-Camera Downloader erstellen
     downloader = MultiCameraDownloader("camera_config.yaml")
     
     try:
-        # Status anzeigen
         status = downloader.get_status()
         print(f"\nKonfigurierte Kameras: {status['total_cameras']}")
         print(f"Aktivierte Kameras: {status['enabled_cameras']}")
         
-        # Kontinuierlichen Download starten
         downloader.start()
         
-        # Programm läuft kontinuierlich - mit Ctrl+C beenden
         while True:
             time.sleep(1)
             
@@ -357,7 +343,6 @@ if __name__ == "__main__":
         downloader.stop()
 
 
-# Hilfsfunktionen für einfache Verwendung
 def create_simple_config(cameras_ips, config_file="simple_config.yaml"):
     """
     Erstellt eine einfache Konfiguration aus einer Liste von IPs
@@ -393,6 +378,3 @@ def create_simple_config(cameras_ips, config_file="simple_config.yaml"):
     print(f"Einfache Konfiguration erstellt: {config_file}")
     return config_file
 
-# Verwendung:
-# create_simple_config(['192.168.4.40', '192.168.4.41', '192.168.4.42'])
-# downloader = MultiCameraDownloader("simple_config.yaml")
