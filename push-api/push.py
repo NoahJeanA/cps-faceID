@@ -10,7 +10,6 @@ from datetime import datetime
 import threading
 import glob
 
-# Einfaches Logging
 logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s - %(message)s',
@@ -26,7 +25,6 @@ class SimpleCompreFaceAPI:
         self.api_key = api_key
         self.endpoint = f"{self.api_url}/api/v1/recognition/recognize"
         
-        # Einfache Session
         self.session = requests.Session()
         self.session.headers.update({
             'x-api-key': self.api_key
@@ -37,18 +35,17 @@ class SimpleCompreFaceAPI:
         try:
             with open(image_path, 'rb') as f:
                 files = {'file': f}
-                # Minimale Parameter für maximale Geschwindigkeit
                 params = {
-                    'det_prob_threshold': 0.75,  # Etwas niedriger für mehr Erkennungen
-                    'limit': 2,  # Max 2 Gesichter für Speed
-                    'prediction_count': 1  # Nur beste Vorhersage
+                    'det_prob_threshold': 0.75,  
+                    'limit': 2,  
+                    'prediction_count': 1  
                 }
                 
                 response = self.session.post(
                     self.endpoint,
                     files=files,
                     params=params,
-                    timeout=10  # Noch kürzerer Timeout
+                    timeout=10  
                 )
                 
                 if response.status_code == 200:
@@ -74,7 +71,6 @@ class SimpleCameraMonitor:
         self.folder_path = config['folder_path']
         self.last_processed = None
         
-        # Einfacher Lock
         self.processing_lock = threading.Lock()
         self.is_busy = False
         
@@ -89,10 +85,8 @@ class SimpleCameraMonitor:
             if not files:
                 return []
             
-            # Sortiere nach Dateiname (enthält Timestamp)
             files.sort()
             
-            # Finde alle neuen Dateien seit last_processed
             new_files = []
             last_processed_found = False
             
@@ -101,7 +95,6 @@ class SimpleCameraMonitor:
                     last_processed_found = True
                     continue
                 
-                # Nur Dateien nach dem letzten verarbeiteten
                 if not self.last_processed or last_processed_found or file_path > self.last_processed:
                     file_age = time.time() - os.path.getmtime(file_path)
                     if file_age >= 0.5 and os.path.getsize(file_path) > 3000:
@@ -119,7 +112,6 @@ class SimpleCameraMonitor:
         """Verarbeite ein Bild mit Live-Status Updates"""
         filename = os.path.basename(image_path)
         
-        # Status: Verarbeitung läuft
         self.update_live_status('processing', f"🔍 Verarbeite {filename}...", image_file=filename)
         
         logger.info(f"🔍 {self.camera_id} - Verarbeite: {filename}")
@@ -132,7 +124,6 @@ class SimpleCameraMonitor:
             faces = result['data'].get('result', [])
             
             if not faces:
-                # Keine Gesichter
                 logger.info(f"   ❌ {self.camera_id} - Keine Gesichter")
                 self.update_live_status('gray', "💤 Keine Gesichter erkannt", image_file=filename)
             else:
@@ -151,7 +142,6 @@ class SimpleCameraMonitor:
                         unknown += 1
                 
                 if recognized:
-                    # Bekannte Personen erkannt
                     message = f"✅ Erkannt: {', '.join(recognized)}"
                     logger.info(f"   ✅ {self.camera_id} - Erkannt: {', '.join(recognized)}")
                     self.update_live_status('green', message, recognized=recognized, image_file=filename)
@@ -159,16 +149,13 @@ class SimpleCameraMonitor:
                     if unknown > 0:
                         logger.info(f"   👤 {self.camera_id} - Plus {unknown} unbekannt")
                     
-                    # Speichere erfolgreiche Erkennungen auch in Historie
                     self.save_to_history(filename, recognized)
                 else:
-                    # Nur unbekannte Gesichter
                     message = f"👤 {unknown} unbekannte Person(en)"
                     logger.info(f"   👤 {self.camera_id} - {unknown} unbekannte Gesichter")
                     self.update_live_status('red', message, image_file=filename)
         
         else:
-            # API Fehler
             if "Timeout" in result['error']:
                 logger.warning(f"   ⏰ {self.camera_id} - API langsam ({duration:.1f}s)")
                 self.update_live_status('gray', f"⏰ API langsam ({duration:.1f}s)", image_file=filename)
@@ -191,7 +178,6 @@ class SimpleCameraMonitor:
             
             results_file = 'recognition_results.json'
             
-            # Lade existierende Ergebnisse
             if os.path.exists(results_file):
                 with open(results_file, 'r') as f:
                     all_results = json.load(f)
@@ -200,11 +186,9 @@ class SimpleCameraMonitor:
             
             all_results.append(result)
             
-            # Begrenze auf 50 Einträge
             if len(all_results) > 50:
                 all_results = all_results[-50:]
             
-            # Speichere zurück
             with open(results_file, 'w') as f:
                 json.dump(all_results, f, indent=2, default=str)
                 
@@ -217,14 +201,13 @@ class SimpleCameraMonitor:
             live_status = {
                 'timestamp': datetime.now().isoformat(),
                 'camera_id': self.camera_id,
-                'status': status_type,  # 'green', 'red', 'gray', 'processing'
+                'status': status_type,  
                 'message': message,
                 'recognized': recognized or [],
                 'image_file': image_file,
                 'last_check': datetime.now().strftime('%H:%M:%S')
             }
             
-            # Schreibe in Live-Status Datei (für Web-Frontend)
             with open('live_status.json', 'w') as f:
                 json.dump(live_status, f, default=str)
                 
@@ -243,7 +226,6 @@ class SimpleCameraMonitor:
             
             results_file = 'recognition_results.json'
             
-            # Lade existierende Ergebnisse
             if os.path.exists(results_file):
                 with open(results_file, 'r') as f:
                     all_results = json.load(f)
@@ -252,11 +234,9 @@ class SimpleCameraMonitor:
             
             all_results.append(result)
             
-            # Begrenze auf 50 Einträge
             if len(all_results) > 50:
                 all_results = all_results[-50:]
             
-            # Speichere zurück
             with open(results_file, 'w') as f:
                 json.dump(all_results, f, indent=2, default=str)
                 
@@ -271,26 +251,22 @@ class SimpleCameraMonitor:
         
         logger.info(f"🚀 {self.camera_id} - Turbo-Loop gestartet (Check alle {check_interval}s)")
         
-        # Initial Status
         self.update_live_status('gray', "🔍 System gestartet - suche nach Bildern...")
         
         while True:
             try:
                 current_time = time.time()
                 
-                # Einfacher Lock-Check
                 if self.processing_lock.acquire(blocking=False):
                     try:
                         if not self.is_busy:
                             self.is_busy = True
                             
-                            # Hole bis zu 3 neue Bilder auf einmal
                             new_images = self.get_newest_images(max_count=3)
                             
                             if new_images:
                                 logger.info(f"📦 {self.camera_id} - {len(new_images)} neue Bilder gefunden")
                                 
-                                # Verarbeite alle neuen Bilder schnell
                                 for image_path in new_images:
                                     self.process_image(image_path)
                                 
@@ -298,12 +274,10 @@ class SimpleCameraMonitor:
                             else:
                                 consecutive_empty += 1
                                 
-                                # Heartbeat alle 30 Sekunden wenn keine neuen Bilder
                                 if current_time - last_heartbeat > 30:
                                     self.update_live_status('gray', f"💤 Überwache... (keine neuen Bilder seit {consecutive_empty} Checks)")
                                     last_heartbeat = current_time
                                 
-                                # Nur alle 30 leeren Checks loggen um Spam zu vermeiden
                                 if consecutive_empty % 30 == 0:
                                     logger.debug(f"💤 {self.camera_id} - {consecutive_empty} leere Checks")
                             
@@ -315,18 +289,13 @@ class SimpleCameraMonitor:
                 else:
                     logger.debug(f"🔒 {self.camera_id} - Lock belegt")
                 
-                # Super-adaptive Wartezeit für maximale Geschwindigkeit
                 if consecutive_empty == 0:
-                    # Gerade neue Bilder verarbeitet - sofort nochmal checken
                     time.sleep(0.2)
                 elif consecutive_empty < 3:
-                    # Kürzlich neue Bilder - schnell checken
                     time.sleep(check_interval * 0.3)
                 elif consecutive_empty < 10:
-                    # Normal checken
                     time.sleep(check_interval)
                 else:
-                    # Lange keine neuen Bilder - etwas entspannter
                     time.sleep(check_interval * 1.2)
                 
             except KeyboardInterrupt:
@@ -344,11 +313,9 @@ class SimpleMonitorSystem:
     def __init__(self, config_file='api-config.yaml'):
         self.config = self.load_config(config_file)
         
-        # API initialisieren
         api_config = self.config['compreface']
         self.api = SimpleCompreFaceAPI(api_config['url'], api_config['api_key'])
         
-        # Monitore erstellen
         self.monitors = {}
         for camera_id, camera_config in self.config['cameras'].items():
             if camera_config.get('enabled', True):
@@ -362,7 +329,6 @@ class SimpleMonitorSystem:
             with open(config_file, 'r') as f:
                 return yaml.safe_load(f)
         except FileNotFoundError:
-            # Erstelle Standard-Config
             config = {
                 'compreface': {
                     'url': 'https://faceid.tappe.dev',
@@ -373,7 +339,7 @@ class SimpleMonitorSystem:
                         'folder_path': '/home/pi/pull-api/camera_images/ESP32-001',
                         'file_pattern': 'esp32-001_*.jpg',
                         'enabled': True,
-                        'check_interval': 1.5  # Schnellere Checks mit 100 Bilder Buffer
+                        'check_interval': 1.5  
                     }
                 }
             }
@@ -401,7 +367,6 @@ class SimpleMonitorSystem:
         logger.info("🎯 Drücke Ctrl+C zum Beenden")
         
         try:
-            # Hauptthread wartet
             while True:
                 time.sleep(1)
         except KeyboardInterrupt:
